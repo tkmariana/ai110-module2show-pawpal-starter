@@ -54,13 +54,11 @@ I made these changes so the plan can explain itself, and I updated `uml.mmd` to 
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used AI to turn my idea into a UML diagram, generate the class skeleton from it, fill in the methods, and write the first tests and the `main.py` demo. The most helpful prompt was asking it to review its own skeleton for missing relationships and logic problems, because that is how I found the gaps in `DailyPlan`.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+When AI reviewed the skeleton, it first suggested saving skipped reasons and start times in a dictionary keyed by task. I didn't use that, because dataclasses can't be dictionary keys by default, so it would have crashed. I used lists of pairs instead. To check the code, I ran `main.py` with two pets and read the schedule it printed, and I wrote two pytest tests that both pass.
 
 ---
 

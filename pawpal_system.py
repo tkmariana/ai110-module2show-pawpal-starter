@@ -110,8 +110,7 @@ class DailyPlan:
         self.skipped_tasks.append((task, reason))
 
     def explain(self) -> str:
-        """Return a multi-line string: each scheduled task with its time range,
-        then each skipped task with its reason."""
+        """Return the plan as text: scheduled tasks with times, then skipped tasks with reasons."""
         lines = []
         if self.scheduled_tasks:
             lines.append("Scheduled:")
@@ -135,6 +134,7 @@ class Scheduler:
     """Builds a daily plan from the owner's tasks and available time."""
 
     def __init__(self, owner: Owner):
+        """Store the owner whose pets' tasks will be scheduled."""
         self.owner = owner
 
     def sort_tasks(self, tasks: list[Task]) -> list[Task]:
@@ -142,13 +142,7 @@ class Scheduler:
         return sorted(tasks, key=lambda t: (-t.priority_value(), t.duration_minutes))
 
     def generate_plan(self, start_minute: int = 8 * 60) -> DailyPlan:
-        """Build the day's plan.
-
-        Gets every pet's tasks from the owner, sorts them, then walks through them
-        tracking elapsed time. A task that fits within owner.available_minutes is
-        added at the next start time; one that doesn't is skipped with a reason.
-        Tasks already marked complete are left out.
-        """
+        """Sort all pending tasks by priority and fit them into the owner's available time."""
         plan = DailyPlan()
         pending = [t for t in self.owner.get_all_tasks() if not t.completed]
         remaining = self.owner.available_minutes

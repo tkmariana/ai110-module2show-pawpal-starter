@@ -42,6 +42,18 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
+## 🛠️ Implementation Summary
+
+I built the logic layer for PawPal+ in `pawpal_system.py`. It has five classes that work together:
+
+- **Task** is one care activity (title, duration, priority, frequency, optional time, and whether it's done).
+- **Pet** holds a pet's info and its list of tasks.
+- **Owner** holds the owner's available time and all of their pets. `get_all_tasks()` collects every pet's tasks into one list.
+- **Scheduler** gets the tasks from the owner (not from a single pet), sorts them by priority, and fits as many as it can into the available time.
+- **DailyPlan** is the result: what got scheduled with start times, what got skipped and why, and an `explain()` method that prints it.
+
+`main.py` is a quick terminal demo, and `tests/test_pawpal.py` has the first tests. The Streamlit app (`app.py`) isn't connected to the logic yet.
+
 ## 🖥️ Sample Output
 
 Output from running `python main.py`:
