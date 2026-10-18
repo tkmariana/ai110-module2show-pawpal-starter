@@ -88,14 +88,36 @@ Sample test output:
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Sorting | `Scheduler.sort_by_time()`, `Scheduler.sort_tasks()` | By time of day, or by priority then duration |
+| Filtering | `Owner.filter_tasks()` | By pet name and/or completion status |
+| Conflict detection | `Scheduler.detect_conflicts()` | Warns about overlapping timed tasks |
+| Recurring tasks | `Task.mark_complete()`, `Pet.mark_task_complete()` | Daily and weekly tasks |
+
+### Sorting
+- **`Scheduler.sort_by_time(tasks)`** orders tasks by their `"HH:MM"` time, earliest first. Zero-padded times sort correctly as plain strings, so the key is `(t.time is None, t.time or "")`. Tasks with no time go last, and ties keep their original order.
+- **`Scheduler.sort_tasks(tasks)`** is what `generate_plan()` uses. It orders by priority (high first), then shorter tasks first.
+
+### Filtering
+- **`Owner.filter_tasks(pet_name=None, completed=None)`** returns the matching tasks across all pets. Each argument is optional and `None` means "don't filter on this", so they combine: `filter_tasks(pet_name="Mochi", completed=False)` gives Mochi's pending tasks. An unknown pet name returns an empty list.
+
+### Conflict detection
+- **`Scheduler.detect_conflicts()`** returns a list of warning strings, one per overlapping pair. It never raises, and an empty list means no conflicts.
+- It looks at pending tasks that have a time, across **all pets** (the owner can only be in one place). Two tasks conflict when one starts before the other ends. Tasks that only touch, like 09:00-09:30 and 09:30-10:00, don't conflict.
+- Tasks are sorted by start time, and the inner loop stops at the first task that starts after the current one ends, so it doesn't compare every pair.
+- Tradeoff: it only warns. It doesn't move tasks, and `generate_plan()` doesn't use preferred times yet.
+
+```
+WARNING: Conflict (Mochi and Luna): 'Grooming' 16:00-16:45 overlaps 'Vet call' starting 16:00
+WARNING: Conflict for Mochi: 'Grooming' 16:00-16:45 overlaps 'Medication' starting 16:30
+```
+
+### Recurring tasks
+- **`Task.mark_complete()`** marks the task done. For `daily` or `weekly` tasks it also returns a new, uncompleted copy with `due_date` moved forward 1 or 7 days. Other frequencies return `None`.
+- **`Pet.mark_task_complete(title)`** is the method to call from the app. It completes the first pending task with that title and adds the next occurrence to the pet's task list. It raises `KeyError` if there is no pending task with that title.
+- The next due date is counted from the task's own `due_date` (or today if it has none), so finishing a task late doesn't shift the routine.
+- Tradeoff: `generate_plan()` doesn't filter by `due_date` yet, so future occurrences still appear in today's plan.
 
 ## 📸 Demo Walkthrough
 

@@ -45,8 +45,7 @@ I made these changes so the plan can explain itself, and I updated `uml.mmd` to 
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+My conflict check only warns the owner; it never moves or drops a task. `detect_conflicts()` flags any overlapping timed tasks across all pets, but `generate_plan()` still ignores preferred times. This is reasonable because only the owner knows which task can move, and auto-fixing could quietly reschedule something important like medication. The cost is that the owner has to resolve conflicts by hand.
 
 ---
 
