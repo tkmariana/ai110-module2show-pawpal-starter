@@ -30,14 +30,14 @@ classDiagram
     class Scheduler {
         +Owner owner
         +sort_tasks(tasks: list~Task~) list~Task~
-        +generate_plan() DailyPlan
+        +generate_plan(start_minute: int) DailyPlan
     }
 
     class DailyPlan {
-        +list~Task~ scheduled_tasks
-        +list~Task~ skipped_tasks
+        +list~tuple~Task, int~~ scheduled_tasks
+        +list~tuple~Task, str~~ skipped_tasks
         +int total_minutes
-        +add_scheduled(task: Task) None
+        +add_scheduled(task: Task, start_minute: int) None
         +add_skipped(task: Task, reason: str) None
         +explain() str
     }

@@ -26,8 +26,13 @@ My design is pretty simple. An owner has pets, each pet has tasks, and a schedul
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Yes. AI generated the class skeleton from my UML, and then I asked it to review its own skeleton for missing pieces. Based on that feedback I changed a few things:
+
+- `DailyPlan` now saves the reason a task was skipped, because before it accepted a reason but had nowhere to store it.
+- `DailyPlan` now saves a start time for each scheduled task, so the plan can say when things happen.
+- A task's priority can only be low, medium, or high, so a typo doesn't break the sorting.
+
+I made these changes so the plan can explain itself, and I updated `uml.mmd` to match.
 
 ---
 
