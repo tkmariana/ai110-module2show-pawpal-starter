@@ -2,8 +2,13 @@
 
 from dataclasses import dataclass, field
 
-
 VALID_PRIORITIES = ("low", "medium", "high")
+PRIORITY_ORDER = {"low": 1, "medium": 2, "high": 3}
+
+
+def _format_time(minute: int) -> str:
+    """Turn minutes from midnight into an HH:MM string."""
+    return f"{minute // 60:02d}:{minute % 60:02d}"
 
 
 @dataclass
@@ -14,14 +19,23 @@ class Task:
     duration_minutes: int
     priority: str  # one of VALID_PRIORITIES
     frequency: str = "daily"
+    time: str | None = None  # optional preferred time, "HH:MM"
+    completed: bool = False
 
     def __post_init__(self) -> None:
-        """Validate that priority is one of VALID_PRIORITIES (raise ValueError if not)."""
-        pass
+        """Reject priorities that aren't low, medium, or high."""
+        if self.priority not in VALID_PRIORITIES:
+            raise ValueError(
+                f"priority must be one of {VALID_PRIORITIES}, got {self.priority!r}"
+            )
 
     def priority_value(self) -> int:
         """Convert the priority label into a number for sorting."""
-        pass
+        return PRIORITY_ORDER[self.priority]
+
+    def mark_complete(self) -> None:
+        """Mark this task as done."""
+        self.completed = True
 
 
 @dataclass
@@ -34,15 +48,28 @@ class Pet:
 
     def add_task(self, task: Task) -> None:
         """Add a care task for this pet."""
-        pass
+        self.tasks.append(task)
 
     def edit_task(self, title: str, duration: int, priority: str) -> None:
         """Update the duration and priority of an existing task."""
-        pass
+        if priority not in VALID_PRIORITIES:
+            raise ValueError(
+                f"priority must be one of {VALID_PRIORITIES}, got {priority!r}"
+            )
+        for task in self.tasks:
+            if task.title == title:
+                task.duration_minutes = duration
+                task.priority = priority
+                return
+        raise KeyError(f"No task titled {title!r} for {self.name}")
 
     def remove_task(self, title: str) -> None:
         """Remove a task by its title."""
-        pass
+        for task in self.tasks:
+            if task.title == title:
+                self.tasks.remove(task)
+                return
+        raise KeyError(f"No task titled {title!r} for {self.name}")
 
 
 @dataclass
@@ -56,11 +83,11 @@ class Owner:
 
     def add_pet(self, pet: Pet) -> None:
         """Add a pet to this owner."""
-        pass
+        self.pets.append(pet)
 
     def get_all_tasks(self) -> list[Task]:
         """Return every task across all of the owner's pets."""
-        pass
+        return [task for pet in self.pets for task in pet.tasks]
 
 
 @dataclass
@@ -75,16 +102,33 @@ class DailyPlan:
 
     def add_scheduled(self, task: Task, start_minute: int) -> None:
         """Add a task at the given start time and add its duration to total_minutes."""
-        pass
+        self.scheduled_tasks.append((task, start_minute))
+        self.total_minutes += task.duration_minutes
 
     def add_skipped(self, task: Task, reason: str) -> None:
         """Record a task that didn't fit, along with the reason."""
-        pass
+        self.skipped_tasks.append((task, reason))
 
     def explain(self) -> str:
         """Return a multi-line string: each scheduled task with its time range,
         then each skipped task with its reason."""
-        pass
+        lines = []
+        if self.scheduled_tasks:
+            lines.append("Scheduled:")
+            for task, start in self.scheduled_tasks:
+                end = start + task.duration_minutes
+                lines.append(
+                    f"  {_format_time(start)}-{_format_time(end)}  {task.title} "
+                    f"({task.duration_minutes} min) [priority: {task.priority}]"
+                )
+        else:
+            lines.append("Nothing could be scheduled.")
+        if self.skipped_tasks:
+            lines.append("Skipped:")
+            for task, reason in self.skipped_tasks:
+                lines.append(f"  {task.title} - {reason}")
+        lines.append(f"Total time: {self.total_minutes} min")
+        return "\n".join(lines)
 
 
 class Scheduler:
@@ -94,15 +138,30 @@ class Scheduler:
         self.owner = owner
 
     def sort_tasks(self, tasks: list[Task]) -> list[Task]:
-        """Sort tasks by priority (highest first)."""
-        pass
+        """Sort tasks by priority (highest first), shorter tasks first within a priority."""
+        return sorted(tasks, key=lambda t: (-t.priority_value(), t.duration_minutes))
 
     def generate_plan(self, start_minute: int = 8 * 60) -> DailyPlan:
         """Build the day's plan.
 
-        Steps: get all tasks from the owner, sort them with sort_tasks(), then walk
-        through them tracking elapsed time. A task that fits within
-        owner.available_minutes is added at the next start time; one that doesn't is
-        skipped with a reason.
+        Gets every pet's tasks from the owner, sorts them, then walks through them
+        tracking elapsed time. A task that fits within owner.available_minutes is
+        added at the next start time; one that doesn't is skipped with a reason.
+        Tasks already marked complete are left out.
         """
-        pass
+        plan = DailyPlan()
+        pending = [t for t in self.owner.get_all_tasks() if not t.completed]
+        remaining = self.owner.available_minutes
+        current = start_minute
+
+        for task in self.sort_tasks(pending):
+            if task.duration_minutes <= remaining:
+                plan.add_scheduled(task, current)
+                current += task.duration_minutes
+                remaining -= task.duration_minutes
+            else:
+                plan.add_skipped(
+                    task,
+                    f"needs {task.duration_minutes} min but only {remaining} min left",
+                )
+        return plan
