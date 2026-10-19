@@ -240,6 +240,39 @@ class Scheduler:
                 )
         return warnings
 
+    def find_next_available_slot(
+        self, duration: int, after: int = 8 * 60, day_end: int = 22 * 60
+    ) -> int | None:
+        """Find the earliest start time where a task of this length fits without a conflict.
+
+        Pending timed tasks (across all pets) are treated as busy blocks. The search
+        walks forward from `after`, jumping past each block that overlaps the
+        candidate slot, so it only looks at each block once.
+
+        Args:
+            duration: Length of the new task in minutes.
+            after: Earliest allowed start, in minutes from midnight (default 08:00).
+            day_end: The slot must finish by this minute (default 22:00).
+
+        Returns:
+            The start time in minutes from midnight, or None if nothing fits today.
+        """
+        busy = []
+        for pet in self.owner.pets:
+            for task in pet.tasks:
+                if task.time and not task.completed:
+                    hours, minutes = task.time.split(":")
+                    start = int(hours) * 60 + int(minutes)
+                    busy.append((start, start + task.duration_minutes))
+        busy.sort()
+
+        candidate = after
+        for start, end in busy:
+            if start >= candidate + duration:
+                break  # the gap before this block is big enough
+            candidate = max(candidate, end)  # overlaps (or ends after) candidate: jump past it
+        return candidate if candidate + duration <= day_end else None
+
     def generate_plan(self, start_minute: int = 8 * 60) -> DailyPlan:
         """Sort all pending tasks by priority and fit them into the owner's available time."""
         plan = DailyPlan()

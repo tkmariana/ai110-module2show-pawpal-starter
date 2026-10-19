@@ -10,15 +10,26 @@
 
 **What task did you give the agent?**
 
-<!-- Describe the goal you asked the agent to accomplish -->
+I asked it, in steps, to build the "smarter scheduling" layer on top of my basic classes: sort tasks by time, filter by pet and status, create the next task when a daily or weekly task is completed, warn about conflicting times, and then (challenge) add a third algorithm, `Scheduler.find_next_available_slot()`, which finds the earliest gap where a new task fits. I also asked it to write tests, docstrings, the README sections, and to connect the features to the Streamlit app.
 
 **What did the agent do?**
 
-<!-- List the steps the agent took (files edited, commands run, etc.) -->
+Files modified:
+- `pawpal_system.py`: added `Task.due_date`, `Task.mark_complete()` (returns the next occurrence), `Pet.mark_task_complete()`, `Owner.filter_tasks()`, `Scheduler.sort_by_time()`, `Scheduler.detect_conflicts()`, and `Scheduler.find_next_available_slot()`, with docstrings.
+- `app.py`: time and repeat inputs, a sorted and filtered task table, conflict warnings, and a "Mark complete" button.
+- `main.py`: demo with tasks added out of order, two deliberate conflicts, and the next free slot.
+- `tests/test_pawpal.py`: grew from 2 to 22 tests.
+- `README.md`, `reflection.md`, `diagrams/uml_final.mmd`: documentation.
+
+It also ran `pytest` after each change, ran `main.py`, and drove the Streamlit app with Streamlit's `AppTest` to check the screens.
 
 **What did you have to verify or fix manually?**
 
-<!-- Describe anything the agent got wrong or that required human review -->
+- The agent found and fixed a crash in `app.py` (a `KeyError` after "Mark complete", because the pet lookup was built before the new task existed). I only knew about it because the app test was run.
+- Its first edit to `main.py` had a broken f-string, which showed up as a `SyntaxError` and was fixed.
+- I stopped one file write (the UML diagram) so I could ask what it would change first, then approved it.
+- I kept my own `detect_conflicts()` loop instead of a shorter `itertools.combinations` version it suggested, because mine stops early and reads better.
+- Known gap I decided to leave: `generate_plan()` still ignores preferred times and due dates, so the plan and the conflict warnings can disagree.
 
 ---
 

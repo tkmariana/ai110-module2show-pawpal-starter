@@ -30,6 +30,7 @@ Your final app should:
 - **Filtering:** show tasks for one pet, only pending or completed ones, or both together.
 - **Conflict warnings:** if two timed tasks overlap, across all pets, the app shows a warning that names both tasks. It warns but never crashes.
 - **Daily and weekly recurrence:** when a daily or weekly task is marked done, the next one is created automatically for the next day or week.
+- **Next available slot:** given a task length, finds the earliest time today where it fits without overlapping an existing timed task.
 - **Plan explanation:** the plan lists each task with its start and end time, then the skipped tasks and why.
 
 ## Getting started
@@ -122,6 +123,7 @@ All 18 tests pass, and the sorting, recurrence, and conflict logic is covered in
 | Filtering | `Owner.filter_tasks()` | By pet name and/or completion status |
 | Conflict detection | `Scheduler.detect_conflicts()` | Warns about overlapping timed tasks |
 | Recurring tasks | `Task.mark_complete()`, `Pet.mark_task_complete()` | Daily and weekly tasks |
+| Next available slot | `Scheduler.find_next_available_slot()` | Earliest gap that fits a new task |
 
 ### Sorting
 - **`Scheduler.sort_by_time(tasks)`** orders tasks by their `"HH:MM"` time, earliest first. Zero-padded times sort correctly as plain strings, so the key is `(t.time is None, t.time or "")`. Tasks with no time go last, and ties keep their original order.
@@ -140,6 +142,10 @@ All 18 tests pass, and the sorting, recurrence, and conflict logic is covered in
 WARNING: Conflict (Mochi and Luna): 'Grooming' 16:00-16:45 overlaps 'Vet call' starting 16:00
 WARNING: Conflict for Mochi: 'Grooming' 16:00-16:45 overlaps 'Medication' starting 16:30
 ```
+
+### Next available slot
+- **`Scheduler.find_next_available_slot(duration, after=08:00, day_end=22:00)`** returns the earliest start time (in minutes from midnight) where a task of that length fits, or `None` if nothing fits today.
+- Pending timed tasks across all pets are the busy blocks. The search walks forward from `after` and jumps past any block that overlaps the candidate slot, so each block is looked at once after sorting. A gap that fits exactly is used.
 
 ### Recurring tasks
 - **`Task.mark_complete()`** marks the task done. For `daily` or `weekly` tasks it also returns a new, uncompleted copy with `due_date` moved forward 1 or 7 days. Other frequencies return `None`.

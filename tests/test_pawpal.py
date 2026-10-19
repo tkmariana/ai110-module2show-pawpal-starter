@@ -193,3 +193,34 @@ def test_one_long_task_conflicts_with_each_task_inside_it():
 def test_pet_with_no_tasks_and_owner_with_no_pets_have_no_conflicts():
     assert Scheduler(Owner("Jordan", 60)).detect_conflicts() == []
     assert Scheduler(_owner_with(("Mochi", []))).detect_conflicts() == []
+
+
+# ---- Next available slot ----
+
+def test_next_slot_is_start_of_day_when_nothing_is_scheduled():
+    assert Scheduler(Owner("Jordan", 60)).find_next_available_slot(30) == 8 * 60
+
+
+def test_next_slot_skips_past_a_busy_block():
+    owner = _owner_with(("Mochi", [Task("Walk", 60, "high", time="08:00")]))
+
+    assert Scheduler(owner).find_next_available_slot(30) == 9 * 60
+
+
+def test_next_slot_uses_a_gap_between_tasks_when_it_fits():
+    owner = _owner_with(
+        ("Mochi", [Task("Walk", 60, "high", time="08:00"), Task("Vet", 30, "high", time="10:00")])
+    )
+    scheduler = Scheduler(owner)
+
+    assert scheduler.find_next_available_slot(60) == 9 * 60  # 09:00-10:00 fits exactly
+    assert scheduler.find_next_available_slot(90) == 10 * 60 + 30  # too big for the gap
+
+
+def test_next_slot_ignores_completed_tasks_and_returns_none_when_day_is_full():
+    done = Task("Walk", 60, "high", time="08:00", completed=True)
+    owner = _owner_with(("Mochi", [done, Task("Long", 14 * 60, "low", time="08:00")]))
+    scheduler = Scheduler(owner)
+
+    assert scheduler.find_next_available_slot(30) is None
+    assert Scheduler(_owner_with(("Mochi", [done]))).find_next_available_slot(30) == 8 * 60

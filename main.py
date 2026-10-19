@@ -49,6 +49,12 @@ for warning in conflicts:
 if not conflicts:
     print("  No conflicts.")
 
+slot = scheduler.find_next_available_slot(30)
+if slot is not None:
+    print(f"\nNext free 30-minute slot: {slot // 60:02d}:{slot % 60:02d}")
+else:
+    print("\nNo free 30-minute slot today.")
+
 # Build and print the plan
 plan = scheduler.generate_plan()
 
