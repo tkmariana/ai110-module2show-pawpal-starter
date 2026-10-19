@@ -40,8 +40,9 @@ I made these changes so the plan can explain itself, and I updated `uml.mmd` to 
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler looks at the owner's available minutes, each task's priority and duration, and whether a task is already done. Preferred times are used for sorting and conflict warnings, but not yet for building the plan. The `preferences` field exists but isn't used.
+
+I put priority first and available time second, because a pet's essential care (meds, feeding) has to happen before extras like play or grooming. Shorter tasks go first within a priority so more of them fit.
 
 **b. Tradeoffs**
 
@@ -59,19 +60,22 @@ I used AI to turn my idea into a UML diagram, generate the class skeleton from i
 
 When AI reviewed the skeleton, it first suggested saving skipped reasons and start times in a dictionary keyed by task. I didn't use that, because dataclasses can't be dictionary keys by default, so it would have crashed. I used lists of pairs instead. To check the code, I ran `main.py` with two pets and read the schedule it printed, and I wrote two pytest tests that both pass.
 
+**c. AI strategy**
+
+- **Most effective features:** asking the AI to review its own work (it found the gaps in `DailyPlan`), having it write tests next to each new method, and letting it run the tests and the app after every change so I could see things actually working.
+- **A suggestion I didn't take:** for `detect_conflicts()`, the AI offered a shorter version using `itertools.combinations`. I kept my own nested loop because it stops early once tasks are sorted, and it is easier for me to read and explain.
+
 ---
 
 ## 4. Testing and Verification
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I wrote 18 pytest tests. They cover sorting by time (including untimed tasks and ties), filtering by pet and status, daily and weekly recurrence, conflict detection (same time, partial overlap, back-to-back, completed tasks), and errors like completing a task that doesn't exist. I tested these because they are the parts with real logic, and the edge cases are where a scheduler usually breaks.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+I'm fairly confident (4 out of 5) in sorting, filtering, recurrence and conflict detection, since all 18 tests pass. I'm less sure about `generate_plan()` and the app screen, which have no tests for preferred times or due dates. Next I would test invalid times like `"25:99"`, tasks that run past midnight, and two pets with the same name.
 
 ---
 
@@ -79,12 +83,12 @@ When AI reviewed the skeleton, it first suggested saving skipped reasons and sta
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I'm happiest with the conflict warnings. They catch overlaps between different pets, not just identical times, and they show up in the app in plain language instead of crashing.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+I would make `generate_plan()` use preferred times and due dates, so the plan and the conflict warnings agree. I would also add a task id so tasks with the same title don't get mixed up, and validate `time` and `frequency` when a task is created.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+The AI writes code fast, but the design choices were still mine to make: should conflicts warn or block, does a preferred time anchor a task, and which class owns recurring tasks. Being the lead architect meant deciding those first, then checking each result by running the tests instead of trusting that it looked right.

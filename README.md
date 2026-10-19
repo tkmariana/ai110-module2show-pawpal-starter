@@ -22,6 +22,16 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## ✨ Features
+
+- **Owner, pet and task setup:** add an owner, any number of pets, and care tasks with a duration, priority, optional time, and how often they repeat.
+- **Priority-based daily plan:** the highest priority tasks get scheduled first, shorter ones first within a priority, until the owner's available time runs out. Anything that doesn't fit is skipped with a reason.
+- **Sorting by time:** tasks can be listed in clock order, with untimed tasks at the end.
+- **Filtering:** show tasks for one pet, only pending or completed ones, or both together.
+- **Conflict warnings:** if two timed tasks overlap, across all pets, the app shows a warning that names both tasks. It warns but never crashes.
+- **Daily and weekly recurrence:** when a daily or weekly task is marked done, the next one is created automatically for the next day or week.
+- **Plan explanation:** the plan lists each task with its start and end time, then the skipped tasks and why.
+
 ## Getting started
 
 ### Setup
@@ -52,7 +62,7 @@ I built the logic layer for PawPal+ in `pawpal_system.py`. It has five classes t
 - **Scheduler** gets the tasks from the owner (not from a single pet), sorts them by priority, and fits as many as it can into the available time.
 - **DailyPlan** is the result: what got scheduled with start times, what got skipped and why, and an `explain()` method that prints it.
 
-`main.py` is a quick terminal demo, and `tests/test_pawpal.py` has the first tests. The Streamlit app (`app.py`) isn't connected to the logic yet.
+`main.py` is a quick terminal demo, and `tests/test_pawpal.py` has the first tests. The Streamlit app (`app.py`) uses this logic to show the task list, filters, conflict warnings, and the daily schedule.
 
 ## 🖥️ Sample Output
 
@@ -139,12 +149,99 @@ WARNING: Conflict for Mochi: 'Grooming' 16:00-16:45 overlaps 'Medication' starti
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### What you can do in the app
+Run it with `streamlit run app.py`. In the app you can:
+- set the owner's name and how many minutes they have today
+- add pets (dog, cat, or other)
+- add tasks to a pet with a title, duration, priority, an optional time like `07:30`, and daily, weekly or once
+- view all tasks in a table, sorted by time, and filter it by pet and by pending or completed
+- mark a task done
+- generate today's schedule
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+### Example workflow
+1. Set the owner to 90 available minutes and add two pets, Mochi (dog) and Luna (cat).
+2. Add tasks: Mochi's "Grooming" at 16:00 (45 min), Luna's "Vet call" at 16:00 (15 min), and Mochi's "Morning walk" at 07:30 (30 min, daily).
+3. Look at the task table. The walk is first, and Grooming and Vet call follow at 16:00.
+4. A yellow warning appears right away because Grooming and Vet call overlap. It names both tasks and says to change one time.
+5. Mark "Morning walk" done. The app says the next walk is tomorrow, and a new pending walk shows up in the table.
+6. Use the filters to show only Mochi's tasks, or only completed tasks.
+7. Click "Generate schedule" to see today's plan, with times, and any skipped tasks with the reason.
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+### Scheduler behaviors you can see
+- **Sorting:** the task table is ordered by time, and untimed tasks come last.
+- **Filtering:** the pet and status dropdowns narrow the table.
+- **Conflict warnings:** overlapping timed tasks are flagged, even between two different pets.
+- **Recurrence:** finishing a daily or weekly task creates the next one.
+- **Skipping:** a task that doesn't fit in the available time is skipped and the reason is shown.
+
+### Sample CLI output
+Output from `python main.py`. The tasks are added out of order on purpose, and two pairs are set up to conflict:
+
+```
+As added:
+  16:00  Grooming (todo)
+  07:30  Morning walk (done)
+  16:30  Medication (todo)
+  07:30  Morning walk (todo)
+  18:00  Play session (todo)
+  --:--  Litter box (todo)
+  08:00  Feeding (todo)
+  16:00  Vet call (todo)
+
+Sorted by time:
+  07:30  Morning walk (done)
+  07:30  Morning walk (todo)
+  08:00  Feeding (todo)
+  16:00  Grooming (todo)
+  16:00  Vet call (todo)
+  16:30  Medication (todo)
+  18:00  Play session (todo)
+  --:--  Litter box (todo)
+
+Mochi only:
+  16:00  Grooming (todo)
+  07:30  Morning walk (done)
+  16:30  Medication (todo)
+  07:30  Morning walk (todo)
+
+Luna only, sorted:
+  08:00  Feeding (todo)
+  16:00  Vet call (todo)
+  18:00  Play session (todo)
+  --:--  Litter box (todo)
+
+Pending:
+  16:00  Grooming (todo)
+  16:30  Medication (todo)
+  07:30  Morning walk (todo)
+  18:00  Play session (todo)
+  --:--  Litter box (todo)
+  08:00  Feeding (todo)
+  16:00  Vet call (todo)
+
+Completed:
+  07:30  Morning walk (done)
+
+Mochi + pending:
+  16:00  Grooming (todo)
+  16:30  Medication (todo)
+  07:30  Morning walk (todo)
+
+Conflict check:
+  WARNING: Conflict (Mochi and Luna): 'Grooming' 16:00-16:45 overlaps 'Vet call' starting 16:00
+  WARNING: Conflict for Mochi: 'Grooming' 16:00-16:45 overlaps 'Medication' starting 16:30
+
+Today's Schedule for Jordan (90 min available)
+==================================================
+Scheduled:
+  08:00-08:10  Medication (10 min) [priority: high]
+  08:10-08:20  Feeding (10 min) [priority: high]
+  08:20-08:50  Morning walk (30 min) [priority: high]
+  08:50-08:55  Litter box (5 min) [priority: medium]
+  08:55-09:10  Vet call (15 min) [priority: medium]
+  09:10-09:30  Play session (20 min) [priority: medium]
+Skipped:
+  Grooming - needs 45 min but only 0 min left
+Total time: 90 min
+```
+
