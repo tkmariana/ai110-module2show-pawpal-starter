@@ -72,19 +72,37 @@ Total time: 60 min
 
 ## 🧪 Testing PawPal+
 
+Run the tests from the project root:
+
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+The 18 tests in `tests/test_pawpal.py` cover:
+
+- **Sorting:** `sort_by_time()` returns chronological order, puts untimed tasks last, keeps ties in their original order, and handles an empty list.
+- **Filtering:** `filter_tasks()` by pet, by status, by both, and with an unknown pet name.
+- **Recurring tasks:** daily tasks recur the next day and weekly tasks 7 days later. One-off tasks don't recur. A task with no due date recurs from today. The next occurrence can recur again. Completing an unknown or already-finished task raises `KeyError`.
+- **Conflict detection:** same-time tasks (same pet and different pets), partial overlaps, one long task covering several others, back-to-back tasks (not a conflict), completed and untimed tasks ignored, and a pet or owner with no tasks.
+- **Basics:** marking a task complete and adding a task to a pet.
+
+Test output:
 
 ```
-# Paste your pytest output here
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\tkmar\Documents\codepath\ai110-module2show-pawpal-starter
+plugins: anyio-4.15.1, platformdirs-4.13.0
+collected 18 items
+
+tests\test_pawpal.py ..................                                  [100%]
+
+============================= 18 passed in 0.06s ==============================
 ```
+
+**Confidence Level: ⭐⭐⭐⭐ (4/5)**
+
+All 18 tests pass, and the sorting, recurrence, and conflict logic is covered including its edge cases. I'm not giving 5 because `Task.time` and `frequency` aren't validated (a bad value like `"abc"` would crash `detect_conflicts()`), `generate_plan()` isn't tested for how it handles preferred times or due dates, and the Streamlit UI has no tests.
 
 ## 📐 Smarter Scheduling
 
